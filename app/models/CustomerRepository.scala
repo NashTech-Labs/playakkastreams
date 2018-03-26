@@ -9,9 +9,9 @@ import slick.lifted.ProvenShape
 /**
   * CREATE TABLE customers (
   * id           BIGSERIAL PRIMARY KEY,
-  * firstname    VARCHAR(255),
-  * lastname     VARCHAR(255),
-  * email        VARCHAR(255),
+  * firstname    VARCHAR(255) NOT NULL,
+  * lastname     VARCHAR(255) NOT NULL,
+  * email        VARCHAR(255) NOT NULL
   * );
   */
 case class Customer(id: Long,
