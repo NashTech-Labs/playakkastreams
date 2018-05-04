@@ -2,17 +2,25 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import akka.stream.scaladsl.{Concat, Source}
+import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import akka.stream.scaladsl._
 import akka.util.ByteString
 import models.CustomerRepository
 import play.api.http.HttpEntity
+import play.api.libs.streams.Accumulator
+import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc._
+import play.core.parsers.Multipart
+import play.core.parsers.Multipart.FileInfo
+import services.AwsS3Client
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class CustomerController @Inject()(cc: ControllerComponents,
-                                   customerRepository: CustomerRepository) extends AbstractController(cc) {
+class CustomerController @Inject()(cc: ControllerComponents, customerRepository: CustomerRepository, awsS3Client: AwsS3Client)
+                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
-def customers: Action[AnyContent] =
+  def customers: Action[AnyContent] =
     Action { implicit request =>
       val customerDatabasePublisher = customerRepository.customers
       val customerSource = Source.fromPublisher(customerDatabasePublisher)
@@ -31,5 +39,29 @@ def customers: Action[AnyContent] =
         header = ResponseHeader(OK, Map(CONTENT_DISPOSITION → s"attachment; filename=customers.csv")),
         body = HttpEntity.Streamed(csvSource, None, None))
     }
+
+  def upload: Action[MultipartFormData[MultipartUploadResult]] =
+    Action(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+      val maybeUploadResult =
+        request.body.file("customers").map {
+          case FilePart(key, filename, contentType, multipartUploadResult) =>
+            multipartUploadResult
+        }
+
+      maybeUploadResult.fold(
+        InternalServerError("Something went wrong!")
+      )(uploadResult =>
+        Ok(s"File ${uploadResult.key} upload to bucket ${uploadResult.bucket}")
+      )
+    }
+
+  private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
+    case FileInfo(partName, filename, contentType) =>
+      val accumulator = Accumulator(awsS3Client.s3Sink("test-ocr", filename))
+
+      accumulator map { multipartUploadResult =>
+        FilePart(partName, filename, contentType, multipartUploadResult)
+      }
+  }
 
 }
