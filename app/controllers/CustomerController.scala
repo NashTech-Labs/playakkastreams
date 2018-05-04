@@ -2,7 +2,6 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import akka.stream.Materializer
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.stream.scaladsl._
 import akka.util.ByteString
@@ -19,7 +18,7 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class CustomerController @Inject()(cc: ControllerComponents, customerRepository: CustomerRepository, awsS3Client: AwsS3Client)
-                                  (implicit ec: ExecutionContext, mat: Materializer) extends AbstractController(cc) {
+                                  (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   def customers: Action[AnyContent] =
     Action { implicit request =>
