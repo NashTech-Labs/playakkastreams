@@ -14,6 +14,7 @@ libraryDependencies ++=
   Seq(
     "com.typesafe.play" %% "play-slick" % "3.0.1",
     "org.postgresql" % "postgresql" % "42.1.4",
+    "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.18",
     jdbc,
     ehcache,
     ws,
