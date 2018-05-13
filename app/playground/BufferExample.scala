@@ -68,15 +68,4 @@ class BufferExample {
 
   // scheduledRunnableGraph.run()
 
-  // ===================================================================================================================
-  // Understanding conflate
-  // ===================================================================================================================
-  val sampleFlow = Flow[Double]
-    .conflateWithSeed(Seq(_)) {
-      case (acc, elem) if 1 < 2 ⇒ acc :+ elem
-      case (acc, _)             ⇒ acc
-    }
-
-  Source((1 to 10).map(_.toDouble)).viaMat(sampleFlow)(Keep.right).to(Sink.foreach(println)).run()
-
 }
